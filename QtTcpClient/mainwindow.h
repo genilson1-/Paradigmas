@@ -28,6 +28,7 @@ public:
   void getData();
 //  void putData();
   void timerEvent(QTimerEvent *e);
+  void changeTime(int timer);
 private slots:
   void on_Connect_pushButton_clicked();
 

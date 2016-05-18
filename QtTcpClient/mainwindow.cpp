@@ -10,11 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
 {
   ui->setupUi(this);
   socket = new QTcpSocket(this);
-  //tcpConnect();
-  //putData();
   getData();
 }
-
 
 void MainWindow::on_Connect_pushButton_clicked()
 {
@@ -23,13 +20,12 @@ void MainWindow::on_Connect_pushButton_clicked()
     socket->connectToHost(a,1234);
     if(socket->waitForConnected(3000)){
       qDebug() << "Connected";
+      ui->plainTextEdit->appendPlainText("Conectado ao servidor");
     }
     else{
       qDebug() << "Disconnected";
     }
 }
-
-
 
 void MainWindow::getData()
 {
@@ -54,40 +50,48 @@ void MainWindow::getData()
   }
 }
 
+void MainWindow::changeTime(int timer){
+    if (timer != ui->horizontalSlider->value()) {
+        killTimer(id);
+        startTimer(1000*ui->horizontalSlider->value());
+    }
+
+
+}
 
 void MainWindow::on_Start_pushButton_clicked()
 {
     tempo = ui->horizontalSlider->value();
     startTimer(tempo*1000);
 
+}
+
+void MainWindow::timerEvent(QTimerEvent *e){
+    changeTime(tempo);
+    id = e->timerId();
     min = ui->Min_plainTextEdit->toPlainText();
     max = ui -> Max_plainTextEdit -> toPlainText();
     maximo = max.toInt();
     minimo = min.toInt();
+    if(socket->waitForConnected(3000)){
+
+        if(socket->isOpen()){
+            datetime = QDateTime::currentDateTime();
+            str = "set "+
+                datetime.toString(Qt::ISODate)+
+                " "+
+                QString::number(minimo + qrand()%(minimo - maximo + 1))+"\r\n";
+
+            qDebug() << str;
+            ui->plainTextEdit->appendPlainText(str);
+            socket->write(str.toStdString().c_str());
+            socket->waitForBytesWritten(3000);
+        }
+    }else {
+        ui->plainTextEdit->appendPlainText("Servidor fora");
+        killTimer(id);
+    }
 }
-
-void MainWindow::timerEvent(QTimerEvent *e){
-    id = e->timerId();
-    QString txt;
-    if(socket->isOpen()){
-//      for(int i=0; i<10; i++){
-        datetime = QDateTime::currentDateTime();
-        str = "set "+
-            datetime.toString(Qt::ISODate)+
-            " "+
-            QString::number(minimo + qrand()%(minimo - maximo))+"\r\n";
-
-        qDebug() << str;
-        ui->plainTextEdit->appendPlainText(str);
-        socket->write(str.toStdString().c_str());
-        socket->waitForBytesWritten(3000);
-
-
-      }
- //   }
-
-}
-
 
 MainWindow::~MainWindow()
 {
@@ -95,17 +99,15 @@ MainWindow::~MainWindow()
   delete ui;
 }
 
-
-
 void MainWindow::on_Disconnect_pushButton_clicked()
 {
     socket->close();
-    //delete socket;
     if(socket->waitForConnected(3000)){
       qDebug() << "Connected";
     }
     else{
       qDebug() << "Disconnected";
+      ui->plainTextEdit->appendPlainText("Servidor desconectado");
     }
 }
 
